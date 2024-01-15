@@ -16,9 +16,9 @@ class Grid():
         self.gates_set: set = self.init_gates_set()
         self.wires: dict = {}
         self.netlist: dict = self.init_netlist_and_wires()
-        self.x_min = 0 # ASSUMPTION
+        self.x_min = None
         self.x_max = None
-        self.y_min = 0 # ASSUMPTION
+        self.y_min = None
         self.y_max = None
         self.z_min = 0
         self.z_max = 7
@@ -82,6 +82,8 @@ class Grid():
 
         self.x_max = max(x) + 1
         self.y_max = max(y) + 1
+        self.x_min = min(x) - 1
+        self.y_min = min(y) - 1
 
     def init_gates_set(self) -> set:
         "creates a set with all the gates"

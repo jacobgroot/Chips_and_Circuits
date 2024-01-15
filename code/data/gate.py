@@ -3,4 +3,4 @@ class Gate():
         self.id = int(id)
         self.x = int(x)
         self.y = int(y)
-        
+        self.entries_exits = []

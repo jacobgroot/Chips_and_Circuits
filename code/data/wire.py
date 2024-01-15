@@ -7,5 +7,7 @@ class Wire:
 
         # by splitsing origin, we wont plot over gates
         x, y = origin
-        self.origin: tuple[int, int] = (x, y, 0) # z is always 0 
-        self.coordinates: list[str] = [f"{x}_{y}_0_{9}",]
+        self.origin: tuple[int, int, int] = (x, y, 0) # z is always 0 
+        self.target: tuple[int, int, int] = None
+        self.coordinates: list[str] = []
+        self.greedy_occupied = set()
