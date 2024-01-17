@@ -10,5 +10,4 @@ for i in range(1):
     greedy = Greedy(grid)
     greedy.run()
     print(grid.costs)
-    # print(i)
 Plotter(grid)

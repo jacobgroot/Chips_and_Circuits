@@ -98,52 +98,67 @@ class Greedy(EngineFrame):
         self.move_wires_to_assigned_layers()
 
     def drop_down(self, wire):
-        # print(wire.coordinates[-1][2])
+        """
+        Drops a wire straight down to its entry point
+        """
         while wire.coordinates[-1][2] != 0:
             new_pos = list(wire.coordinates[-1])
             new_pos[2] -= 1
             wire.coordinates.append(tuple(new_pos))
             self.grid.is_occupied.add(tuple(new_pos))
 
-    def assign_available_square(self, start_finish= 'start'):
+    def assign_available_square(self, start_finish='start'):
         """
         Moves the netlists to an available square on the z=0 plane.
         """
-
         gate_index = 0
-        lenght_list = 1
         if start_finish == 'finish':
             gate_index = 1
-            lenght_list = 0 # when finishing, the single spot might be taken already
 
-        # TODO: potential problem, what if only one entry, but lot of exits
         sorted_gates = self.sorted_gates()
 
-        # check each gate for netlists
-        for gate in sorted_gates:
-            gate_o = self.grid.gates[gate]
-            connected_netlists = [netlist for netlist in self.grid.netlist if gate == netlist[gate_index]] # netlist build as "1_2"
+        for gate_key in sorted_gates:
+            gate = self.grid.gates[gate_key]
+            connected_netlists = [netlist for netlist in self.grid.netlist if gate_key == netlist[gate_index]]
             if len(connected_netlists) > 0:
-                print("check")
-
                 for netlist in connected_netlists:
-
                     wire = self.grid.wires[netlist]
-                    available_square = self.find_available_square(gate_o) 
-                    if available_square == None:
-                        print("available_square is none")
+                    available_square = self.find_available_square(gate)
+                    if available_square is None:
+                        raise Exception("available square is none")
                     if start_finish == 'start':
-                        wire.coordinates.append(available_square)
-                    else: 
-                        wire.target = (gate_o.x, gate_o.y, 0)
-                        print(wire.target)
-                        wire.entry = available_square
-                    self.grid.gates[gate].entries_exits[available_square] = False # not assigned to wire
+                        self.add_start_coordinate(wire, available_square)
+                    else:
+                        self.add_finish_coordinate(wire, gate, available_square)
+                    self.update_gate_entries_exits(gate, available_square)
                     self.grid.is_occupied.add(available_square)
+                    self.update_grid_cost(available_square)
 
-                    # if it is not the gate itself, add to cost
-                    if available_square[:3] not in self.grid.is_occupied:
-                        self.grid.cost_new_wire(available_square)
+    def add_start_coordinate(self, wire, available_square):
+        """
+        Starting point of the wire, can be gate or an adjacent square
+        """
+        wire.coordinates.append(available_square)
+
+    def add_finish_coordinate(self, wire, gate, available_square):
+        """
+        places a target in a wire (always on z=0)
+        """
+        wire.target = (gate.x, gate.y, 0)
+        wire.entry = available_square
+
+    def update_gate_entries_exits(self, gate, available_square):
+        """
+        adds available square to entries_exit, false because a wire did not yet use it
+        """
+        gate.entries_exits[available_square] = False
+
+    def update_grid_cost(self, available_square):
+        """
+        calls cost function to update cost with new wire segment
+        """
+        if available_square[:3] not in self.grid.is_occupied:
+            self.grid.cost_new_wire(available_square)
 
     def move_wires_to_assigned_layers(self):
         """
@@ -172,7 +187,7 @@ class Greedy(EngineFrame):
             possible_pos = random.choice(gate.possible_entries_exits_free)
         else:
             possible_pos = random.choice(gate.possible_entries_exits_shared)
-        # print(possible_pos)
+
         count += 1
         if self.valid(possible_pos, init=True):
             if gate.possible_entries_exits_free:
@@ -236,33 +251,3 @@ class Greedy(EngineFrame):
             gates_exits_entries[gate.id] = len(possible_entries_exits)
         sorted_gates = sorted(gates_exits_entries.items(), key=lambda x: x[1], reverse=True)
         return dict(sorted_gates)
-    
-
-    def plot_error(self):
-        """
-        plots grid when stuck in initialising an error
-        """
-        import matplotlib
-        matplotlib.use('TkAgg')
-        import matplotlib.pyplot as plt
-
-
-        x = [point[0] for point in self.grid.is_occupied]
-        y = [point[1] for point in self.grid.is_occupied]
-
-        color = []
-        for point in self.grid.is_occupied:
-            if len(point) > 3:
-                if point[:3] not in self.grid.is_occupied:
-                    color.append('b')
-                else:
-                    color.append('r')
-            else:
-                color.append('r')
-        
-        ['b' if len(point) > 3 and point[-1] != 2 > 3 else 'r' for point in self.grid.is_occupied]
-        plt.scatter(x, y, color=color)
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('Occupied Points')
-        plt.show()

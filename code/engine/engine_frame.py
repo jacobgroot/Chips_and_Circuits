@@ -58,14 +58,8 @@ class EngineFrame():
     def run(self):
         "searches to connect all gates wit random moves"
     
-        print(self.grid.netlist)
-
         for i in range(100):
-            self.step()
-
-            # print(self.grid.is_occupied)s
-        print(self.grid.netlist)
-        
+            self.step()        
     
     def get_random_connection(self, counter: int = 0)-> str:
         "get a random connection key from the netlist"
