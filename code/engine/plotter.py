@@ -18,14 +18,14 @@ class Plotter():
         plot_lines = []
         
         for wire in self.grid.wires:
-            wire_segments = [list(map(int, segment.split('_')[:3])) for segment in self.grid.wires[wire].coordinates]
+            wire_segments = [tuple(map(int, segment[:3])) for segment in self.grid.wires[wire].coordinates]
             plot_lines.append(wire_segments)
 
         # Transfer gate coordinates to int
         plot_points = []
         for gate_key in self.grid.gates:
             gate_instance = self.grid.gates[gate_key]
-            plot_points.append([gate_instance.x, gate_instance.y, 0])
+            plot_points.append((gate_instance.x, gate_instance.y, 0))
 
         # Make a 3D plot for each wire
         fig = plt.figure()
@@ -33,10 +33,12 @@ class Plotter():
 
         # Plot wires with random colors
         for line_segments in plot_lines:
-            color = self.get_random_color()
-            x, y, z = zip(*line_segments)
-            ax.plot(x[0:], y[0:], z[0:], c=color, marker='o')
-            ax.plot(x[0], y[0], z[0], c='g', marker='o')
+            if line_segments:
+
+                color = self.get_random_color()
+                x, y, z = zip(*line_segments)
+                ax.plot(x[0:], y[0:], z[0:], c=color, marker='o')
+                ax.plot(x[0], y[0], z[0], c='g', marker='o')
 
         # Plot gates
         x, y, z = zip(*plot_points)

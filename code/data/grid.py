@@ -13,9 +13,12 @@ class Grid():
         self.gate_file = gate
         self.netlist_file = netlist
         self.gates: dict = self.init_gates()
+        self.get_gates_by_coordinates: dict = self.init_gates_by_coordinates()
         self.gates_set: set = self.init_gates_set()
         self.wires: dict = {}
         self.netlist: dict = self.init_netlist_and_wires()
+        self.crosses: dict = {} #(x, y, z) : (wire, wire)
+        self.steps: int = 0
         self.x_min = None
         self.x_max = None
         self.y_min = None
@@ -34,7 +37,7 @@ class Grid():
         for gate in file:
             result = gate.split(',')
             gate = Gate(result[0], result[1], result[2])
-            self.is_occupied.add(f"{gate.x}_{gate.y}_0")
+            self.is_occupied.add((gate.x, gate.y, 0))
             gates[gate.id] = gate
         
         return gates
@@ -49,7 +52,7 @@ class Grid():
             result = f.readlines()[1:]
         return result
     
-    def init_netlist_and_wires(self) -> dict[str, bool]:
+    def init_netlist_and_wires(self) -> dict[(int, int), bool]:
         """
         creates a netlist with all targets. Netlist will be a dictionary
         with the origin and the target as name in the form of "a_b". Where
@@ -66,7 +69,7 @@ class Grid():
             result = target.split(',')
 
             # result[0] is the origin, result[1] is the target
-            target = result[0] + "_" + result[1].strip() # remove newline at the end
+            target = (int(result[0]), int(result[1].strip())) # remove newline at the end
             wire = Wire(target, (self.gates[int(result[0])].x, self.gates[int(result[0])].y))
             self.wires[target] = wire
             netlist[target] = False
@@ -90,5 +93,13 @@ class Grid():
 
         gates = set()
         for gate in self.gates.values():
-            gates.add(f"{gate.x}_{gate.y}_0")
+            gates.add((gate.x, gate.y, 0))
         return gates 
+    
+    def init_gates_by_coordinates(self) -> dict():
+        "creates a dictionary with coordinates as key and gate as value"
+
+        gates = {}
+        for gate in self.gates.values():
+            gates[(gate.x, gate.y)] = gate
+        return gates

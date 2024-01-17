@@ -9,5 +9,7 @@ class Wire:
         x, y = origin
         self.origin: tuple[int, int, int] = (x, y, 0) # z is always 0 
         self.target: tuple[int, int, int] = None
-        self.coordinates: list[str] = []
+        self.exit: tuple[int, int, int] = None # where wire will exit gate
+        self.entry: tuple[int, int, int] = None # where wire will enter gate
+        self.coordinates: list[tuple(int, int, int)] = []
         self.greedy_occupied = set()
