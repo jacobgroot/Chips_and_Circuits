@@ -18,7 +18,7 @@ class Grid():
         self.wires: dict = {}
         self.netlist: dict = self.init_netlist_and_wires()
         self.crosses: dict = {} #(x, y, z) : (wire, wire)
-        self.steps: int = 0
+        self.costs: int = 0
         self.x_min = None
         self.x_max = None
         self.y_min = None
@@ -103,3 +103,26 @@ class Grid():
         for gate in self.gates.values():
             gates[(gate.x, gate.y)] = gate
         return gates
+    
+    def cost_new_wire(self, pos):
+        """
+        update cost with new position of a wire
+        """
+        self.costs += 1
+        if len(pos) == 3 or pos[:3] in self.is_occupied:
+            return 
+        
+        pos1 = pos[0], pos[1], pos[2], 0
+        pos2 = pos[0], pos[1], pos[2], 1
+        pos3 = pos[0], pos[1], pos[2], 2
+        positions = [pos1, pos2, pos3]
+
+        # we always check the wire itself, so start at -1
+        crosses = -1 
+        for pos in positions:
+            if pos in self.is_occupied:
+                crosses += 1
+        
+        self.costs += crosses * 300 if crosses > 0 else 0
+        
+        

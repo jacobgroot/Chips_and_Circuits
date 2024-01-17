@@ -9,5 +9,6 @@ for i in range(1):
     grid = Grid(GATE_FILE, NETLIST_FILE)
     greedy = Greedy(grid)
     greedy.run()
+    print(grid.costs)
     # print(i)
 Plotter(grid)

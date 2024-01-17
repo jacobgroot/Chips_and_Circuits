@@ -11,8 +11,8 @@ class Greedy(EngineFrame):
 
 
     CURRENT VERSION:
-    allows for invalid moves where wires share grid segment and go in the same direction
-    does track total steps, but not crossings
+    allows for invalid moves where wires share grid segment and go in the same direction.
+    Has a working cost function, does not keep track where the crossings are.
     """
 
     def __init__(self, grid):
@@ -35,7 +35,7 @@ class Greedy(EngineFrame):
                 self.step(wire)
 
             wire.coordinates.append(wire.target)
-            self.grid.steps += 1
+            self.grid.cost_new_wire(wire.target)
             self.drop_down(wire)
         
     def step(self, wire):
@@ -64,7 +64,8 @@ class Greedy(EngineFrame):
         # if self.valid(new_pos, wire=wire):
         wire.coordinates.append(new_pos)
         self.grid.is_occupied.add(new_pos)
-        self.grid.steps += 1
+        self.grid.cost_new_wire(new_pos)
+
 
     def assign_layer(self)-> dict:
         """
@@ -132,8 +133,10 @@ class Greedy(EngineFrame):
                         wire.target = available_square
                     self.grid.gates[gate].entries_exits[available_square] = False # not assigned to wire
                     self.grid.is_occupied.add(available_square)
+
+                    # if it is not the gate itself, add to cost
                     if available_square[:3] not in self.grid.is_occupied:
-                        self.grid.steps += 1
+                        self.grid.cost_new_wire(available_square)
 
     def move_wires_to_assigned_layers(self):
         """
