@@ -109,7 +109,7 @@ class Grid():
         update cost with new position of a wire
         """
         self.costs += 1
-        if len(pos) == 3 or pos[:3] in self.is_occupied:
+        if len(pos) < 4 or pos[:3] in self.is_occupied:
             return 
         
         pos1 = pos[0], pos[1], pos[2], 0

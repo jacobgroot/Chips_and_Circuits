@@ -31,12 +31,12 @@ class Greedy(EngineFrame):
             start = wire.coordinates[-1]
             
             # stop until wire is (above) entry point
-            while wire.coordinates[-1][:2] != wire.target[:2]:
+            while wire.coordinates[-1][:2] != wire.entry[:2]:
                 self.step(wire)
 
+            self.drop_down(wire)
             wire.coordinates.append(wire.target)
             self.grid.cost_new_wire(wire.target)
-            self.drop_down(wire)
         
     def step(self, wire):
         """
@@ -44,8 +44,8 @@ class Greedy(EngineFrame):
         """
 
         current_pos = list(wire.coordinates[-1])  # Convert tuple to list
-        x_travel = abs(current_pos[0] - wire.target[0])
-        y_travel = abs(current_pos[1] - wire.target[1])
+        x_travel = abs(current_pos[0] - wire.entry[0])
+        y_travel = abs(current_pos[1] - wire.entry[1])
 
         x_or_y = random.choice([0, 1])
 
@@ -55,7 +55,7 @@ class Greedy(EngineFrame):
             x_or_y = 0
         
         new_pos = current_pos
-        new_pos[x_or_y] += 1 if current_pos[x_or_y] < wire.target[x_or_y] else -1
+        new_pos[x_or_y] += 1 if current_pos[x_or_y] < wire.entry[x_or_y] else -1
 
         # Convert list back to tuple
         new_pos = tuple(new_pos)
@@ -98,6 +98,7 @@ class Greedy(EngineFrame):
         self.move_wires_to_assigned_layers()
 
     def drop_down(self, wire):
+        # print(wire.coordinates[-1][2])
         while wire.coordinates[-1][2] != 0:
             new_pos = list(wire.coordinates[-1])
             new_pos[2] -= 1
@@ -115,22 +116,28 @@ class Greedy(EngineFrame):
             gate_index = 1
             lenght_list = 0 # when finishing, the single spot might be taken already
 
+        # TODO: potential problem, what if only one entry, but lot of exits
         sorted_gates = self.sorted_gates()
 
         # check each gate for netlists
         for gate in sorted_gates:
+            gate_o = self.grid.gates[gate]
             connected_netlists = [netlist for netlist in self.grid.netlist if gate == netlist[gate_index]] # netlist build as "1_2"
             if len(connected_netlists) > 0:
+                print("check")
+
                 for netlist in connected_netlists:
 
                     wire = self.grid.wires[netlist]
-                    available_square = self.find_available_square(self.grid.gates[gate]) 
+                    available_square = self.find_available_square(gate_o) 
                     if available_square == None:
                         print("available_square is none")
                     if start_finish == 'start':
                         wire.coordinates.append(available_square)
                     else: 
-                        wire.target = available_square
+                        wire.target = (gate_o.x, gate_o.y, 0)
+                        print(wire.target)
+                        wire.entry = available_square
                     self.grid.gates[gate].entries_exits[available_square] = False # not assigned to wire
                     self.grid.is_occupied.add(available_square)
 
@@ -207,13 +214,13 @@ class Greedy(EngineFrame):
             if level not in same_level_wires:
                 same_level_wires[level] = [wire]
             for higher_wire in higher_wires:
-                if higher_wire.target != None:
-                    x, y, z, d = higher_wire.target
+                if higher_wire.entry != None:
+                    x, y, z, d = higher_wire.entry
                     wire.greedy_occupied.add((x, y, level, 2))
             for same_level_wire in same_level_wires[level]:
 
-                if same_level_wire != wire and wire.target != None:
-                    if same_level_wire.target == None:
+                if same_level_wire != wire and wire.entry != None:
+                    if same_level_wire.entry == None:
                         raise Exception("same level wire target is none")
 
                     same_level_wire.greedy_occupied.add((x, y, level, 2))
