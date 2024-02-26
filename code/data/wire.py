@@ -13,3 +13,4 @@ class Wire:
         self.entry: tuple[int, int, int] = None # where wire will enter gate
         self.coordinates: list[tuple(int, int, int)] = []
         self.greedy_occupied = set()
+        self.connected = False

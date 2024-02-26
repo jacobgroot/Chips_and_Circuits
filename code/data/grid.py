@@ -8,9 +8,9 @@ class Grid():
     It will be a collection of gates with the coordinates of wires.
     Gates and wires will have a x, y, & z, but there will not be a grid rendered.
     """
-    def __init__(self, gate: str, netlist: str):
-        self.is_occupied: set = set()
-        self.gate_file = gate
+    def __init__(self, chip: str, netlist: str):
+        self.is_occupied: dict = {}
+        self.chip_file = chip
         self.netlist_file = netlist
         self.gates: dict = self.init_gates()
         self.get_gates_by_coordinates: dict = self.init_gates_by_coordinates()
@@ -31,13 +31,13 @@ class Grid():
         "creates a grid, size based on the gates list"
         
         gates = {}
-        file = Grid.read_csv(self.gate_file)
+        file = Grid.read_csv(self.chip_file)
 
         # store all gates
         for gate in file:
             result = gate.split(',')
             gate = Gate(result[0], result[1], result[2])
-            self.is_occupied.add((gate.x, gate.y, 0))
+            self.is_occupied[(gate.x, gate.y, 0)] = gate
             gates[gate.id] = gate
         
         return gates
@@ -104,11 +104,12 @@ class Grid():
             gates[(gate.x, gate.y)] = gate
         return gates
     
-    def cost_new_wire(self, pos):
+    def cost_new_wire(self,wire):
         """
         update cost with new position of a wire
         """
         self.costs += 1
+        pos = wire.coordinates[-1]
         if len(pos) < 4 or pos[:3] in self.is_occupied:
             return 
         
@@ -118,10 +119,13 @@ class Grid():
         positions = [pos1, pos2, pos3]
 
         # we always check the wire itself, so start at -1
-        crosses = -1 
+        crosses = 0
         for pos in positions:
             if pos in self.is_occupied:
-                crosses += 1
+                if wire != self.is_occupied[pos]:
+                    crosses += 1
+                    self.crosses[pos] = (wire, self.is_occupied[pos])
+
         
         self.costs += crosses * 300 if crosses > 0 else 0
         

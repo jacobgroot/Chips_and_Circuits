@@ -1,6 +1,7 @@
 from engine.engine_frame import EngineFrame
 import math
 import random
+import os
 
 class Greedy(EngineFrame):
     """
@@ -12,12 +13,14 @@ class Greedy(EngineFrame):
 
     CURRENT VERSION:
     allows for invalid moves where wires share grid segment and go in the same direction.
-    Has a working cost function, does not keep track where the crossings are.
+    Has a working cost function.
     """
 
     def __init__(self, grid):
-        super().__init__(grid)
+
+        super().__init__(grid, startup=True)
         self.assigned_layer: dict = self.assign_layer()
+        self.netlist = None
         self.rise()
         self.block_entries()
 
@@ -27,6 +30,7 @@ class Greedy(EngineFrame):
         Greedy because it will always choose shortest manhattan
         Random, because it will randomly choose between equal paths.
         """
+
         for wire in self.grid.wires.values():
             start = wire.coordinates[-1]
             
@@ -36,7 +40,8 @@ class Greedy(EngineFrame):
 
             self.drop_down(wire)
             wire.coordinates.append(wire.target)
-            self.grid.cost_new_wire(wire.target)
+            wire.connected = True
+            self.grid.cost_new_wire(wire)
         
     def step(self, wire):
         """
@@ -53,6 +58,8 @@ class Greedy(EngineFrame):
             x_or_y = 1
         elif y_travel == 0:
             x_or_y = 0
+
+        # TODO write a x_or_y get function
         
         new_pos = current_pos
         new_pos[x_or_y] += 1 if current_pos[x_or_y] < wire.entry[x_or_y] else -1
@@ -62,10 +69,10 @@ class Greedy(EngineFrame):
 
         # no axis needed, since we move towards the target, we cannot move outside grid
         # if self.valid(new_pos, wire=wire):
-        wire.coordinates.append(new_pos)
-        self.grid.is_occupied.add(new_pos)
-        self.grid.cost_new_wire(new_pos)
 
+        wire.coordinates.append(new_pos)
+        self.grid.is_occupied[(new_pos)] = wire
+        self.grid.cost_new_wire(wire)
 
     def assign_layer(self)-> dict:
         """
@@ -105,7 +112,7 @@ class Greedy(EngineFrame):
             new_pos = list(wire.coordinates[-1])
             new_pos[2] -= 1
             wire.coordinates.append(tuple(new_pos))
-            self.grid.is_occupied.add(tuple(new_pos))
+            self.grid.is_occupied[(tuple(new_pos))] = wire
 
     def assign_available_square(self, start_finish='start'):
         """
@@ -115,11 +122,11 @@ class Greedy(EngineFrame):
         if start_finish == 'finish':
             gate_index = 1
 
-        sorted_gates = self.sorted_gates()
-
-        for gate_key in sorted_gates:
+        self.netlist = self.sorted_gates()
+        for gate_key in self.netlist:
             gate = self.grid.gates[gate_key]
             connected_netlists = [netlist for netlist in self.grid.netlist if gate_key == netlist[gate_index]]
+
             if len(connected_netlists) > 0:
                 for netlist in connected_netlists:
                     wire = self.grid.wires[netlist]
@@ -131,8 +138,15 @@ class Greedy(EngineFrame):
                     else:
                         self.add_finish_coordinate(wire, gate, available_square)
                     self.update_gate_entries_exits(gate, available_square)
-                    self.grid.is_occupied.add(available_square)
-                    self.update_grid_cost(available_square)
+                    self.grid.is_occupied[(available_square)] = wire
+                    self.grid_cost_av_sq(available_square)
+                    self.finish_wire(wire)
+
+    def finish_wire(self, wire):
+        '''
+        method only used in q_learning
+        '''
+        pass
 
     def add_start_coordinate(self, wire, available_square):
         """
@@ -153,12 +167,14 @@ class Greedy(EngineFrame):
         """
         gate.entries_exits[available_square] = False
 
-    def update_grid_cost(self, available_square):
+    def grid_cost_av_sq(self, available_square):
         """
         calls cost function to update cost with new wire segment
+        ONLY TO BE USED ON INITIALISING ENTRIES EXITS
+        THEY CAN NEVER CROSS, SO DO NOT CALL COST UPDATE
         """
         if available_square[:3] not in self.grid.is_occupied:
-            self.grid.cost_new_wire(available_square)
+            self.grid.costs += 1
 
     def move_wires_to_assigned_layers(self):
         """
@@ -175,7 +191,7 @@ class Greedy(EngineFrame):
                 new_coordinate = (coords[0], coords[1], layer, 2)
                 wire.coordinates.append(new_coordinate)
                 
-                self.grid.is_occupied.add(new_coordinate)
+                self.grid.is_occupied[(new_coordinate)] = wire
 
     def find_available_square(self, gate, count=0):
         """
@@ -197,7 +213,7 @@ class Greedy(EngineFrame):
             return possible_pos
         else:
             if count == 400:
-                self.plot_error()
+j                self.plot_error()
                 raise Exception("stuck trying to find a entry/exit!")
             
             return self.find_available_square(gate, count)
@@ -242,12 +258,13 @@ class Greedy(EngineFrame):
             higher_wires.append(wire)
             
     def sorted_gates(self):
-        '''
-        returns a dict of gates sorted by the amount of entries/exits they share
-        '''
+        """
+        sorts the gates by the amount of entries/exits they share
+        """
         gates_exits_entries = {}
         for gate in self.grid.gates.values():
             possible_entries_exits = gate.possible_entries_exits_shared
             gates_exits_entries[gate.id] = len(possible_entries_exits)
-        sorted_gates = sorted(gates_exits_entries.items(), key=lambda x: x[1], reverse=True)
-        return dict(sorted_gates)
+        sorted_gates = tuple(sorted(gates_exits_entries, key=lambda x: gates_exits_entries[x], reverse=True))
+        return sorted_gates
+        

@@ -2,10 +2,16 @@ import random
 
 
 class EngineFrame():
-    def __init__(self, grid):
+    '''
+    Holds the logic for a grid. Can perform simple validation checks
+    and can assign possible entries or exits to gates if startup=True
+    '''
+    def __init__(self, grid, startup=False):
         self.grid = grid
-        self.init_possible_entries_exits()
-        self.init_entries_exits_needed()
+
+        if startup:
+            self.init_possible_entries_exits()
+            self.init_entries_exits_needed()
 
     def init_possible_entries_exits(self):
         """
@@ -134,5 +140,9 @@ class EngineFrame():
 
             self.grid.netlist.pop((origin, target))
 
+    def get_random_wire(self):
+        "selects a wire from grid"
+
+        return random.choice(list(self.grid.wires.values()))
 
     

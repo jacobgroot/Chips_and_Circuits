@@ -28,11 +28,11 @@ class Random(EngineFrame):
         new_pos_int: int = [int(i) for i in current_pos_str]
         new_pos_int[axis] += direction
         new_pos_int[3] = axis
-        new_pos_str = f"{new_pos_int[0]}_{new_pos_int[1]}_{new_pos_int[2]}_{new_pos_int[3]}"
+        
  
         # check boundries and occupied
-        if self.valid(new_pos_int, new_pos_str, axis):
+        if self.valid(new_pos_int, axis):
             
-            self.grid.is_occupied.add(new_pos_str)
-            wire.coordinates.append(new_pos_str)
+            self.grid.is_occupied[(new_pos_int)] = wire
+            wire.coordinates.append(new_pos_int)
             self.is_completed(origin, target, wire)
